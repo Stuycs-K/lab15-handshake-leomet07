@@ -1,6 +1,6 @@
 #include "pipe_networking.h"
-//UPSTREAM = to the server / from the client
-//DOWNSTREAM = to the client / from the server
+// UPSTREAM = to the server / from the client
+// DOWNSTREAM = to the client / from the server
 /*=========================
   server_setup
 
@@ -9,13 +9,37 @@
 
   returns the file descriptor for the upstream pipe.
   =========================*/
+
+void err() {
+    printf("ERROR %d: %s\n", errno, strerror(errno));
+    exit(errno);
+}
+
 int server_setup() {
-  int from_client = 0;
-  return from_client;
+    mkfifo(WKP, 0666);
+
+    int from_client = open(WKP, O_RDONLY);
+    if (from_client == -1) {
+        err();
+    }
+    printf("Waiting for first part of handshake from a client...\n");
+    char from_client_message[256];
+    int connection_made = read(from_client, from_client_message, 256);
+    if (connection_made == -1) {
+        err();
+    }
+    printf("Message from client recieved |%s|.\n", from_client_message);
+    // once connection made, delete disk reference to well known pipe, pipe remains open in memory
+    int remove_pipe_location_file_status = remove(WKP);
+    if (remove_pipe_location_file_status == -1) {
+        err();
+    }
+    printf("Removed reference to WKP on disk.\n");
+    return from_client;
 }
 
 /*=========================
-  server_handshake 
+  server_handshake
   args: int * to_client
 
   Performs the server side pipe 3 way handshake.
@@ -24,10 +48,9 @@ int server_setup() {
   returns the file descriptor for the upstream pipe (see server setup).
   =========================*/
 int server_handshake(int *to_client) {
-  int from_client;
-  return from_client;
+    int from_client = server_setup();
+    return from_client;
 }
-
 
 /*=========================
   client_handshake
@@ -39,10 +62,9 @@ int server_handshake(int *to_client) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int client_handshake(int *to_server) {
-  int from_server;
-  return from_server;
+    int from_server;
+    return from_server;
 }
-
 
 /*=========================
   server_connect
@@ -53,8 +75,6 @@ int client_handshake(int *to_server) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int server_connect(int from_client) {
-  int to_client  = 0;
-  return to_client;
+    int to_client = 0;
+    return to_client;
 }
-
-
