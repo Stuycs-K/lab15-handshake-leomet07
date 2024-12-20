@@ -18,23 +18,21 @@ void err() {
 int server_setup() {
     mkfifo(WKP, 0666);
 
-    int from_client = open(WKP, O_RDONLY);
+    printf("Server: Waiting for first part of handshake from a client...\n");
+
+    int from_client = open(WKP, O_RDONLY); // opening the pipe blocks until the other end opens, so a blocking read not needed
     if (from_client == -1) {
         err();
     }
-    printf("Waiting for first part of handshake from a client...\n");
-    char from_client_message[256];
-    int connection_made = read(from_client, from_client_message, 256);
-    if (connection_made == -1) {
-        err();
-    }
-    printf("Message from client recieved |%s|.\n", from_client_message);
+
+    printf("Server: Client connection opened (Client has connected)!\n");
+
     // once connection made, delete disk reference to well known pipe, pipe remains open in memory
     int remove_pipe_location_file_status = remove(WKP);
     if (remove_pipe_location_file_status == -1) {
         err();
     }
-    printf("Removed reference to WKP on disk.\n");
+    printf("Server: Removed reference to WKP on disk.\n");
     return from_client;
 }
 
@@ -48,7 +46,42 @@ int server_setup() {
   returns the file descriptor for the upstream pipe (see server setup).
   =========================*/
 int server_handshake(int *to_client) {
-    int from_client = server_setup();
+    int from_client = server_setup(); // recieved a message from client and deleted pipe
+    char from_client_message[256];
+
+    printf("Server: waiting to read...\n");
+    int read_status = read(from_client, from_client_message, 256); // reads fifo name
+    if (read_status == -1) {
+        err();
+    }
+    printf("Server: Message from client recieved |%s|.\n", from_client_message);
+
+    // send into PP (SYN_ACK)
+    int open_private_pipe = open(from_client_message, O_WRONLY);
+    if (open_private_pipe == -1) {
+        err();
+    }
+
+    char random_string[256] = "43187";
+
+    int write_status = write(open_private_pipe, random_string, strlen(random_string) + 1);
+    if (write_status == -1) {
+        err();
+    }
+
+    printf("Server: Sent SYN_ACK |%s|\n", random_string);
+
+    // Wait for ack
+    char client_ack[256];
+    int ack_read_status = read(from_client, client_ack, 256);
+    if (ack_read_status == -1) {
+        err();
+    }
+
+    printf("Server: Recieved ack |%s|\n", client_ack);
+
+    // from_client_message should be private pipe name, aka child process PID
+
     return from_client;
 }
 
@@ -62,7 +95,21 @@ int server_handshake(int *to_client) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int client_handshake(int *to_server) {
-    int from_server;
+    *to_server = open(WKP, O_WRONLY);
+    if (*to_server == -1) {
+        err();
+    }
+    char string_pid[256];
+
+    itoa(getpid(), string_pid, 10);
+    int mkfifo_status = mkfifo(string_pid, 0666);
+    if (mkfifo_status == -1) {
+        err();
+    }
+
+    printf("Client: Made private pipe!\n");
+
+    int from_server = open(string_pid, O_RDONLY); // this hangs until server opens this
     return from_server;
 }
 
