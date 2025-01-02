@@ -101,15 +101,43 @@ int client_handshake(int *to_server) {
     }
     char string_pid[256];
 
-    itoa(getpid(), string_pid, 10);
+    sprintf(string_pid, "%d", getpid());
+
     int mkfifo_status = mkfifo(string_pid, 0666);
     if (mkfifo_status == -1) {
         err();
     }
-
     printf("Client: Made private pipe!\n");
 
+    int write_pp_name_to_wkp_status = write(*to_server, string_pid, strlen(string_pid) + 1);
+    if (write_pp_name_to_wkp_status == -1) {
+        err();
+    }
+    printf("Client: Wrote private pipe name (child pid) to WKP!\n");
+
+    // open private pipe
     int from_server = open(string_pid, O_RDONLY); // this hangs until server opens this
+    if (from_server == -1) {
+        err();
+    }
+    printf("Client: Opened private pipe and server has connected!\n");
+
+    // delete pp
+    int del_pp_status = remove(string_pid);
+    if (del_pp_status == -1) {
+        err();
+    }
+    printf("Client: Deleted PP file on disk!\n");
+
+    // read
+    char ack[256];
+    int read_ack_status = read(from_server, ack, 256);
+    if (read_ack_status == -1) {
+        err();
+    }
+    printf("Client: Read ack |%s|\n", ack);
+
+    
     return from_server;
 }
 
