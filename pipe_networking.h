@@ -5,6 +5,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 #ifndef NETWORKING_H
@@ -20,6 +21,8 @@
 #define ACK 2
 #define MESSAGE 3
 #define EXIT 4
+
+int get_random_reasonable_int();
 
 int server_handshake(int *to_client);
 int client_handshake(int *to_server);

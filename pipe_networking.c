@@ -1,4 +1,5 @@
 #include "pipe_networking.h"
+#include <time.h>
 // UPSTREAM = to the server / from the client
 // DOWNSTREAM = to the client / from the server
 /*=========================
@@ -13,6 +14,12 @@
 void err() {
     printf("ERROR %d: %s\n", errno, strerror(errno));
     exit(errno);
+}
+
+int get_random_reasonable_int() {
+    srand(time(NULL));
+    int x = rand();
+    return 1000 + (x % 100000);
 }
 
 int server_setup() {
@@ -47,22 +54,10 @@ int server_setup() {
   =========================*/
 int server_handshake(int *to_client) {
     int from_client = server_setup(); // recieved a message from client and deleted pipe
-    char from_client_message[256];
 
-    printf("Server: waiting to read...\n");
-    int read_status = read(from_client, from_client_message, 256); // reads fifo name
-    if (read_status == -1) {
-        err();
-    }
-    printf("Server: Message from client recieved |%s|.\n", from_client_message);
+    *to_client = server_connect(from_client);
 
-    // send into PP (SYN_ACK)
-    *to_client = open(from_client_message, O_WRONLY); // open_private_pipe
-    if (*to_client == -1) {
-        err();
-    }
-
-    int syn_ack_int = 43187;
+    int syn_ack_int = get_random_reasonable_int();
     char random_string[256];
     sprintf(random_string, "%d", syn_ack_int);
 
@@ -177,6 +172,20 @@ int client_handshake(int *to_server) {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int server_connect(int from_client) {
-    int to_client = 0;
+    char from_client_message[256];
+
+    printf("Server: waiting to read...\n");
+    int read_status = read(from_client, from_client_message, 256); // reads fifo name, aka pid
+    if (read_status == -1) {
+        err();
+    }
+    printf("Server: Message from client recieved |%s|.\n", from_client_message);
+
+    // send into PP (SYN_ACK)
+    int to_client = -1;
+    to_client = open(from_client_message, O_WRONLY); // open_private_pipe
+    if (to_client == -1) {
+        err();
+    }
     return to_client;
 }
