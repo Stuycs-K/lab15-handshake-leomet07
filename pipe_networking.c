@@ -57,14 +57,16 @@ int server_handshake(int *to_client) {
     printf("Server: Message from client recieved |%s|.\n", from_client_message);
 
     // send into PP (SYN_ACK)
-    int open_private_pipe = open(from_client_message, O_WRONLY);
-    if (open_private_pipe == -1) {
+    *to_client = open(from_client_message, O_WRONLY); // open_private_pipe
+    if (*to_client == -1) {
         err();
     }
 
-    char random_string[256] = "43187";
+    int syn_ack_int = 43187;
+    char random_string[256];
+    sprintf(random_string, "%d", syn_ack_int);
 
-    int write_status = write(open_private_pipe, random_string, strlen(random_string) + 1);
+    int write_status = write(*to_client, random_string, strlen(random_string) + 1);
     if (write_status == -1) {
         err();
     }
@@ -80,8 +82,16 @@ int server_handshake(int *to_client) {
 
     printf("Server: Recieved ack |%s|\n", client_ack);
 
-    // TODO
-    // verify ack as int is (syn_ack + 1)
+    int ack_int = -1;
+    sscanf(client_ack, "%d", &ack_int);
+    if (ack_int == (syn_ack_int + 1)) {
+        printf("Server: Expected ACK (%d) matches client ACK (%d)\n", syn_ack_int + 1, ack_int);
+        printf("Server: Handshake success!\n");
+    } else {
+        printf("Expected ACK (%d) does not match client ACK (%d)\n", syn_ack_int + 1, ack_int);
+        printf("Server: Handshake failed... quitting!\n");
+        exit(1);
+    }
 
     return from_client;
 }
