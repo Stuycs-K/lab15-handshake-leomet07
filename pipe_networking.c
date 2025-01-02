@@ -80,7 +80,8 @@ int server_handshake(int *to_client) {
 
     printf("Server: Recieved ack |%s|\n", client_ack);
 
-    // from_client_message should be private pipe name, aka child process PID
+    // TODO
+    // verify ack as int is (syn_ack + 1)
 
     return from_client;
 }
@@ -130,14 +131,30 @@ int client_handshake(int *to_server) {
     printf("Client: Deleted PP file on disk!\n");
 
     // read
-    char ack[256];
-    int read_ack_status = read(from_server, ack, 256);
-    if (read_ack_status == -1) {
+    char syn_ack[256];
+    int read_syn_ack_status = read(from_server, syn_ack, 256);
+    if (read_syn_ack_status == -1) {
         err();
     }
-    printf("Client: Read ack |%s|\n", ack);
+    printf("Client: Read syn_ack |%s|\n", syn_ack);
 
-    
+    // parse d
+    int syn_ack_int = -1;
+    sscanf(syn_ack, "%d", &syn_ack_int);
+    printf("Client: Parsed int before +1: |%d|\n", syn_ack_int);
+    int ack_int = syn_ack_int + 1;
+    printf("Client: Parsed int after +1: |%d|\n", ack_int);
+
+    char ack[256];
+    sprintf(ack, "%d", ack_int);
+
+    int write_ack_status = write(*to_server, ack, strlen(ack) + 1);
+    if (write_ack_status == -1) {
+        err();
+    }
+
+    printf("Client: Finished sending ack!\n");
+
     return from_server;
 }
 
