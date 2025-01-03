@@ -18,5 +18,5 @@ int main() {
     if (read_hi_status == -1) {
         err();
     }
-    printf("Server successfully read |%s| from client.\n");
+    printf("Server successfully read |%s| from client.\n", msg_from_client);
 }
