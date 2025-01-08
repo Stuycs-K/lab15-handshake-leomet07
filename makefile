@@ -21,6 +21,9 @@ basic_server.o: basic_server.c pipe_networking.h
 persistant_server.o: persistant_server.c
 	@gcc -c persistant_server.c
 
+forking_server.o: forking_server.c
+	@gcc -c forking_server.c
+
 pipe_networking.o: pipe_networking.c pipe_networking.h
 	@gcc -c pipe_networking.c
 
