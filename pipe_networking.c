@@ -23,7 +23,10 @@ int get_random_reasonable_int() {
 }
 
 int server_setup() {
-    mkfifo(WKP, 0666);
+    int mkfifo_status = mkfifo(WKP, 0666);
+    if (mkfifo_status == -1){
+        err();
+    }
 
     printf("Server: Waiting for first part of handshake from a client...\n");
 
