@@ -38,5 +38,7 @@ int server_setup();
 int multi_server_setup();
 // int multi_server_connect(int from_client, struct message m);
 
+void server_handshake_half(int *to_client, int from_client);
+
 void err();
 #endif

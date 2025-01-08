@@ -55,5 +55,5 @@ dkms.conf
 
 client
 server
-
+basic
 persistant
