@@ -13,8 +13,8 @@ static void sighandler(int signo) {
 }
 
 int main() {
-    signal(SIGINT, sighandler);
     int count = 0;
+    int has_signal_been_added = 0;
     while (1) {
         int to_client;
         int from_client;
@@ -25,15 +25,15 @@ int main() {
         pid_t child_pid;
         child_pid = fork();
 
-        if (child_pid == 0){
+        if (child_pid == 0) {
             // finish the other half of hanshake inside child
             server_handshake_half(&to_client, from_client);
 
             // looping convo with child
-            while (1){
+            while (1) {
                 char msg_to_client[256];
                 sprintf(msg_to_client, "msg from server: ping (%d)", count);
-                
+
                 int write_hi_status = write(to_client, msg_to_client, strlen(msg_to_client) + 1);
                 if (write_hi_status == -1) {
                     err();
@@ -47,7 +47,6 @@ int main() {
                 }
                 printf("Server successfully read |%s| from client.\n", msg_from_client);
 
-                
                 count++;
 
                 sleep(1); // sleep for 1 second
@@ -55,13 +54,12 @@ int main() {
             // finishing server_handshake deletes WKP already by this point
             close(to_client);
             close(from_client);
-            
+
             exit(0); // make sure child dies after it is done
         } else {
+            if (!has_signal_been_added) {
+                signal(SIGINT, sighandler);
+            }
         }
-
-        
     }
-
-   
 }
