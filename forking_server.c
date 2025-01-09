@@ -1,12 +1,18 @@
 #include "pipe_networking.h"
 
-static void sighandler(int signo) {
-    if (signo == SIGINT) {
-        printf("Control+C: Removing WKP\n");
+void remove_wkp_if_exist(){
+    if (access(WKP, F_OK) == 0){ // if WKP file exists
         int rm_wkp_status = remove(WKP);
         if (rm_wkp_status == -1) {
             err();
         }
+    }
+}
+
+static void sighandler(int signo) {
+    if (signo == SIGINT) {
+        printf("Control+C: Handling WKP deletion!\n");
+        remove_wkp_if_exist();
         printf("Exiting!\n");
         exit(0);
     }
@@ -14,7 +20,8 @@ static void sighandler(int signo) {
 
 int main() {
     int count = 0;
-    int has_signal_been_added = 0;
+    signal(SIGINT, sighandler);
+    remove_wkp_if_exist(); // just in case left over from earlier versions!
     while (1) {
         int to_client;
         int from_client;
@@ -26,6 +33,7 @@ int main() {
         child_pid = fork();
 
         if (child_pid == 0) {
+            signal(SIGINT, SIG_IGN); // disable interrupt for child so sighandler only runs in parent!
             // finish the other half of hanshake inside child
             server_handshake_half(&to_client, from_client);
 
@@ -57,9 +65,7 @@ int main() {
 
             exit(0); // make sure child dies after it is done
         } else {
-            if (!has_signal_been_added) {
-                signal(SIGINT, sighandler);
-            }
+            
         }
     }
 }
