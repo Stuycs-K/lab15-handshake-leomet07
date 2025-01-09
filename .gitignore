@@ -52,8 +52,3 @@ Mkfile.old
 dkms.conf
 
 .vscode/
-
-client
-server
-basic
-persistant
